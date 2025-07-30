@@ -1,40 +1,38 @@
+const fs = require('fs');
+const path = require('path');
 const express = require('express');
 const puppeteer = require('puppeteer');
-const path = require('path');
-const fs = require('fs');
 
 const app = express();
 const PORT = process.env.PORT || 3000;
 
-app.use(express.static(path.join(__dirname, 'public')));
-app.use(express.urlencoded({ extended: true }));
-app.use(express.json());
-
-// Dynamically find Chrome executable installed by Puppeteer
-function getChromePath() {
-  const basePath = '/opt/render/.cache/puppeteer/chrome/linux';
+// Function to find the Chrome executable path dynamically
+function getChromeExecutablePath() {
+  const basePath = '/opt/render/.cache/puppeteer/chrome';
   if (!fs.existsSync(basePath)) {
-    throw new Error(`Puppeteer chrome cache folder not found: ${basePath}`);
-  }
-  
-  // Read all version folders, e.g., ['127.0.6533.88', '131.0.6778.204', ...]
-  const versions = fs.readdirSync(basePath).filter(name => /^\d+\./.test(name));
-  if (versions.length === 0) {
-    throw new Error('No Chrome versions found in Puppeteer cache folder.');
+    throw new Error(`Chrome cache folder does not exist: ${basePath}`);
   }
 
-  // Sort and pick the latest version (lexical sort works here)
-  const latestVersion = versions.sort().pop();
+  const linuxFolders = fs.readdirSync(basePath).filter(folder => folder.startsWith('linux-'));
+  if (linuxFolders.length === 0) {
+    throw new Error('No linux- version folder found in Puppeteer chrome cache.');
+  }
 
-  // Construct full path to Chrome executable
-  const chromePath = path.join(basePath, latestVersion, 'chrome-linux64', 'chrome');
-  
+  // Sort folders alphabetically and pick the last (latest) one
+  const latestLinuxFolder = linuxFolders.sort().pop();
+
+  const chromePath = path.join(basePath, latestLinuxFolder, 'chrome-linux64', 'chrome');
+
   if (!fs.existsSync(chromePath)) {
     throw new Error(`Chrome executable not found at: ${chromePath}`);
   }
 
   return chromePath;
 }
+
+app.use(express.static(path.join(__dirname, 'public')));
+app.use(express.urlencoded({ extended: true }));
+app.use(express.json());
 
 app.post('/start', async (req, res) => {
   const phoneNumber = req.body.phoneNumber;
@@ -46,12 +44,12 @@ app.post('/start', async (req, res) => {
 
   let browser;
   try {
-    const chromePath = getChromePath();
+    const chromePath = getChromeExecutablePath();
 
     browser = await puppeteer.launch({
       headless: true,
       executablePath: chromePath,
-      args: ['--no-sandbox', '--disable-setuid-sandbox'],
+      args: ['--no-sandbox', '--disable-setuid-sandbox']
     });
 
     const page = await browser.newPage();
