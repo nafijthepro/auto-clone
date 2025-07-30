@@ -36,7 +36,17 @@ app.post('/start', async (req, res) => {
     });
 
     const page = await browser.newPage();
-    await page.goto('https://binge.buzz/login', { waitUntil: 'networkidle0' });
+
+    // More flexible navigation wait strategy
+    try {
+      await page.goto('https://binge.buzz/login', {
+        waitUntil: 'domcontentloaded',
+        timeout: 60000,
+      });
+    } catch (e) {
+      console.warn('⚠️ First page load failed, retrying...');
+      await page.goto('https://binge.buzz/login', { waitUntil: 'load', timeout: 60000 });
+    }
 
     await page.waitForSelector('.PhoneInputInput', { visible: true });
     const input = await page.$('.PhoneInputInput');
@@ -45,7 +55,7 @@ app.post('/start', async (req, res) => {
     await page.type('.PhoneInputInput', phoneNumber);
 
     const entered = await page.$eval('.PhoneInputInput', el => el.value);
-    console.log('✅ Entered:', entered);
+    console.log('✅ Entered phone number:', entered);
 
     await page.waitForSelector('.BingeBtnBase-root', { visible: true });
     await page.click('.BingeBtnBase-root');
