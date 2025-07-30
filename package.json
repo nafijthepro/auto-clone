@@ -3,7 +3,7 @@
   "version": "1.0.0",
   "main": "index.js",
   "scripts": {
-    "postinstall": "npx puppeteer browsers install chrome",
+    "postinstall": "PUPPETEER_CACHE_DIR=.cache npx puppeteer browsers install chrome",
     "start": "node index.js"
   },
   "engines": {
