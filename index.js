@@ -22,7 +22,7 @@ app.use(express.json());
 app.post('/start', async (req, res) => {
   const phoneNumber = req.body.phoneNumber;
   if (!phoneNumber || !/^\d{10,}$/.test(phoneNumber)) {
-    return res.status(400).send('Invalid or missing phone number');
+    return res.status(400).json({ error: 'Invalid or missing phone number' });
   }
 
   console.log(`➡️ Starting OTP automation for: ${phoneNumber}`);
@@ -33,6 +33,7 @@ app.post('/start', async (req, res) => {
       headless: true,
       executablePath: CHROME_PATH,
       args: ['--no-sandbox', '--disable-setuid-sandbox'],
+      defaultViewport: { width: 1280, height: 800 },
     });
 
     const page = await browser.newPage();
@@ -43,12 +44,15 @@ app.post('/start', async (req, res) => {
         timeout: 60000,
       });
     } catch (e) {
-      console.warn('⚠️ First page load failed, retrying...');
-      await page.goto('https://binge.buzz/login', { waitUntil: 'load', timeout: 60000 });
+      console.warn('⚠️ Initial page load failed, retrying with load event...');
+      await page.goto('https://binge.buzz/login', {
+        waitUntil: 'load',
+        timeout: 60000,
+      });
     }
 
-    // Wait for phone input by class, exactly as given
-    await page.waitForSelector('input.PhoneInputInput', { visible: true });
+    // Wait for phone input, max 30 seconds
+    await page.waitForSelector('input.PhoneInputInput', { visible: true, timeout: 30000 });
     const input = await page.$('input.PhoneInputInput');
     await input.click({ clickCount: 3 });
     await page.keyboard.press('Backspace');
@@ -57,22 +61,44 @@ app.post('/start', async (req, res) => {
     const entered = await page.$eval('input.PhoneInputInput', el => el.value);
     console.log('✅ Entered phone number:', entered);
 
-    // Wait and click the verify button by exact class (note it has two classes, so select the main one)
-    await page.waitForSelector('button.BingeBtnBase-root', { visible: true });
+    // Wait and click the verify button (15 seconds max)
+    await page.waitForSelector('button.BingeBtnBase-root', { visible: true, timeout: 15000 });
     await page.click('button.BingeBtnBase-root');
 
-    // Wait for any potential result/loading
-    await page.waitForTimeout(3000);
+    // Wait for any potential processing
+    await page.waitForTimeout(5000);
 
-    // Take screenshot after clicking Verify
-    const screenshotPath = path.join(__dirname, 'public', `otp_screenshot_${Date.now()}.png`);
+    // Save screenshot to public folder
+    const screenshotName = `otp_screenshot_${Date.now()}.png`;
+    const screenshotPath = path.join(__dirname, 'public', screenshotName);
     await page.screenshot({ path: screenshotPath, fullPage: true });
-    console.log(`🖼️ Screenshot saved: http://localhost:${PORT}/${path.basename(screenshotPath)}`);
+    const screenshotUrl = `http://localhost:${PORT}/${screenshotName}`;
 
-    res.send('✅ OTP generated successfully!');
+    console.log(`🖼️ Screenshot saved: ${screenshotUrl}`);
+
+    res.json({
+      message: '✅ OTP generated successfully!',
+      screenshotUrl,
+    });
   } catch (error) {
-    console.error('❌ Automation error:', error.message);
-    res.status(500).send('Server error during OTP automation');
+    console.error('❌ Automation error:', error);
+
+    // Attempt to take error screenshot for debugging
+    if (browser) {
+      try {
+        const pages = await browser.pages();
+        if (pages.length > 0) {
+          const errorScreenshotName = `error_screenshot_${Date.now()}.png`;
+          const errorScreenshotPath = path.join(__dirname, 'public', errorScreenshotName);
+          await pages[0].screenshot({ path: errorScreenshotPath, fullPage: true });
+          console.log(`🖼️ Error screenshot saved: http://localhost:${PORT}/${errorScreenshotName}`);
+        }
+      } catch (screenshotError) {
+        console.warn('⚠️ Failed to capture error screenshot:', screenshotError);
+      }
+    }
+
+    res.status(500).json({ error: 'Server error during OTP automation', details: error.message });
   } finally {
     if (browser) await browser.close();
   }
