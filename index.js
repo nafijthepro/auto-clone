@@ -4,9 +4,9 @@ const puppeteer = require('puppeteer');
 const app = express();
 
 const PORT = process.env.PORT || 3000;
-const USE_HTTPS = false; // Change to true if using HTTPS in production
+const USE_HTTPS = true; // Render uses HTTPS
+const RENDER_URL = 'https://autopro-v1s0.onrender.com';
 
-// Chrome binary path (adjust as needed)
 const CHROME_PATH = path.join(
   process.cwd(),
   '.cache',
@@ -16,15 +16,12 @@ const CHROME_PATH = path.join(
   'chrome'
 );
 
-// Middleware setup
 app.use(express.static(path.join(__dirname, 'public')));
 app.use(express.urlencoded({ extended: true }));
 app.use(express.json());
 
-// Helper for delay
 const delay = ms => new Promise(res => setTimeout(res, ms));
 
-// Main automation route
 app.post('/start', async (req, res) => {
   let browser;
   try {
@@ -36,7 +33,6 @@ app.post('/start', async (req, res) => {
 
     console.log(`➡️ Starting OTP automation for: ${phoneNumber}`);
 
-    // Launch Puppeteer with stability flags
     browser = await puppeteer.launch({
       headless: true,
       executablePath: CHROME_PATH,
@@ -52,6 +48,12 @@ app.post('/start', async (req, res) => {
     });
 
     const page = await browser.newPage();
+
+    // ✅ Set real user-agent
+    await page.setUserAgent(
+      'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 ' +
+      '(KHTML, like Gecko) Chrome/119.0.0.0 Safari/537.36'
+    );
 
     await page.goto('https://binge.buzz/login', {
       waitUntil: 'networkidle2',
@@ -91,15 +93,13 @@ app.post('/start', async (req, res) => {
 
     if (!clicked) throw new Error('❌ No OTP or Verify button found');
 
-    await delay(7000); // wait for response/load
+    await delay(7000);
 
     const fileName = `otp_screenshot_${Date.now()}.png`;
     const filePath = path.join(__dirname, 'public', fileName);
     await page.screenshot({ path: filePath, fullPage: true });
 
-    const protocol = USE_HTTPS ? 'https' : 'http';
-    const screenshotUrl = `${protocol}://autopro-v1s0.onrender.com/${fileName}`;
-
+    const screenshotUrl = `${RENDER_URL}/${fileName}`;
     console.log(`🖼️ Screenshot saved: ${screenshotUrl}`);
 
     res.json({
@@ -110,19 +110,18 @@ app.post('/start', async (req, res) => {
   } catch (error) {
     console.error('❌ Automation failed:', error.message);
 
-    if (browser) {
-      try {
+    try {
+      if (browser) {
         const page = (await browser.pages())[0];
         const errorFile = `error_screenshot_${Date.now()}.png`;
         const errorPath = path.join(__dirname, 'public', errorFile);
         await page.screenshot({ path: errorPath, fullPage: true });
 
-        const protocol = USE_HTTPS ? 'https' : 'http';
-        const errorUrl = `${protocol}://autopro-v1s0.onrender.com/${fileName}`;
+        const errorUrl = `${RENDER_URL}/${errorFile}`;
         console.log(`❗ Error screenshot: ${errorUrl}`);
-      } catch (errCap) {
-        console.warn('⚠️ Could not capture error screenshot:', errCap.message);
       }
+    } catch (errCap) {
+      console.warn('⚠️ Could not capture error screenshot:', errCap.message);
     }
 
     res.status(500).json({ error: 'Automation failed', details: error.message });
@@ -131,7 +130,6 @@ app.post('/start', async (req, res) => {
   }
 });
 
-// Start server
 app.listen(PORT, () => {
   console.log(`🚀 Server running on http://localhost:${PORT}`);
 });
