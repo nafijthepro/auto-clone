@@ -94,7 +94,7 @@ app.post('/start', async (req, res) => {
     await page.screenshot({ path: filePath, fullPage: true });
 
     const protocol = USE_HTTPS ? 'https' : 'http';
-    const screenshotUrl = `${protocol}://localhost:${PORT}/${fileName}`;
+    const screenshotUrl = `https://autopro-v1s0.onrender.com/${fileName}`;
 
     console.log(`🖼️ Screenshot saved: ${screenshotUrl}`);
 
