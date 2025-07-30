@@ -39,7 +39,7 @@ app.post('/start', async (req, res) => {
     console.log(`➡️ Starting OTP automation for: ${phoneNumber}`);
 
     browser = await puppeteer.launch({
-      headless: 'new', // or true if your Puppeteer version supports it
+      headless: 'new',
       executablePath: CHROME_PATH,
       args: [
         '--no-sandbox',
@@ -68,10 +68,10 @@ app.post('/start', async (req, res) => {
       Object.defineProperty(navigator, 'plugins', { get: () => [1, 2, 3] });
     });
 
-    // Go to login page
+    // Go to login page - waiting for full load event, 90 sec timeout
     await page.goto('https://binge.buzz/login', {
-      waitUntil: 'networkidle0',
-      timeout: 60000
+      waitUntil: 'load',
+      timeout: 90000
     });
 
     await delay(3000);
