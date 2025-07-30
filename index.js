@@ -20,15 +20,21 @@ app.use(express.urlencoded({ extended: true }));
 app.use(express.json());
 
 app.post('/start', async (req, res) => {
-  const phoneNumber = req.body.phoneNumber;
-  if (!phoneNumber || !/^\d{10,}$/.test(phoneNumber)) {
-    return res.status(400).json({ error: 'Invalid or missing phone number' });
-  }
-
-  console.log(`➡️ Starting OTP automation for: ${phoneNumber}`);
-
   let browser;
   try {
+    let phoneNumber = req.body.phoneNumber;
+    if (!phoneNumber) {
+      return res.status(400).json({ error: 'Missing phone number' });
+    }
+
+    // Clean phone number to digits only
+    phoneNumber = phoneNumber.replace(/\D/g, '');
+    if (!/^\d{10,}$/.test(phoneNumber)) {
+      return res.status(400).json({ error: 'Invalid phone number format' });
+    }
+
+    console.log(`➡️ Starting OTP automation for: ${phoneNumber}`);
+
     browser = await puppeteer.launch({
       headless: true,
       executablePath: CHROME_PATH,
@@ -51,28 +57,51 @@ app.post('/start', async (req, res) => {
       });
     }
 
-    // Wait for phone input, max 30 seconds
+    // Wait for country code selector and set country
+    await page.waitForSelector('select.PhoneInputCountrySelect', { visible: true, timeout: 30000 });
+    // Choose Bangladesh as example (change if needed)
+    await page.select('select.PhoneInputCountrySelect', 'BD');
+
+    // Wait for phone input
     await page.waitForSelector('input.PhoneInputInput', { visible: true, timeout: 30000 });
     const input = await page.$('input.PhoneInputInput');
     await input.click({ clickCount: 3 });
     await page.keyboard.press('Backspace');
-    await page.type('input.PhoneInputInput', phoneNumber);
+    await page.type('input.PhoneInputInput', phoneNumber, { delay: 100 }); // slow typing
 
     const entered = await page.$eval('input.PhoneInputInput', el => el.value);
     console.log('✅ Entered phone number:', entered);
 
-    // Wait and click the verify button (15 seconds max)
-    await page.waitForSelector('button.BingeBtnBase-root', { visible: true, timeout: 15000 });
-    await page.click('button.BingeBtnBase-root');
+    // Wait for "Generate OTP" button by text and click it
+    await page.waitForFunction(() => {
+      return [...document.querySelectorAll('button.BingeBtnBase-root')].some(btn => btn.textContent.includes('Generate OTP'));
+    }, { timeout: 20000 });
 
-    // Wait for any potential processing
-    await page.waitForTimeout(5000);
+    const buttons = await page.$$('button.BingeBtnBase-root');
+    let clicked = false;
+    for (const btn of buttons) {
+      const text = await page.evaluate(el => el.textContent, btn);
+      if (text.includes('Generate OTP')) {
+        await btn.click();
+        clicked = true;
+        break;
+      }
+    }
+
+    if (!clicked) {
+      throw new Error('Generate OTP button not found');
+    }
+
+    // Wait for confirmation or some indication OTP was sent (adjust if you know selector)
+    await page.waitForTimeout(7000);
 
     // Save screenshot to public folder
     const screenshotName = `otp_screenshot_${Date.now()}.png`;
     const screenshotPath = path.join(__dirname, 'public', screenshotName);
     await page.screenshot({ path: screenshotPath, fullPage: true });
-    const screenshotUrl = `http://localhost:${PORT}/${screenshotName}`;
+
+    // Construct screenshot URL with https (change to http if you don't have https)
+    const screenshotUrl = `https://localhost:${PORT}/${screenshotName}`;
 
     console.log(`🖼️ Screenshot saved: ${screenshotUrl}`);
 
@@ -83,7 +112,6 @@ app.post('/start', async (req, res) => {
   } catch (error) {
     console.error('❌ Automation error:', error);
 
-    // Attempt to take error screenshot for debugging
     if (browser) {
       try {
         const pages = await browser.pages();
@@ -91,7 +119,8 @@ app.post('/start', async (req, res) => {
           const errorScreenshotName = `error_screenshot_${Date.now()}.png`;
           const errorScreenshotPath = path.join(__dirname, 'public', errorScreenshotName);
           await pages[0].screenshot({ path: errorScreenshotPath, fullPage: true });
-          console.log(`🖼️ Error screenshot saved: http://localhost:${PORT}/${errorScreenshotName}`);
+          const errScreenshotUrl = `https://localhost:${PORT}/${errorScreenshotName}`;
+          console.log(`🖼️ Error screenshot saved: ${errScreenshotUrl}`);
         }
       } catch (screenshotError) {
         console.warn('⚠️ Failed to capture error screenshot:', screenshotError);
