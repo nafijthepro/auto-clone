@@ -1,35 +1,19 @@
-const fs = require('fs');
 const path = require('path');
 const express = require('express');
 const puppeteer = require('puppeteer');
-
-
 const app = express();
+
 const PORT = process.env.PORT || 3000;
 
-// Get current working directory's .cache path dynamically
-function getChromeExecutablePath() {
-  const basePath = path.join(process.cwd(), '.cache', 'puppeteer', 'chrome');
-  if (!fs.existsSync(basePath)) {
-    throw new Error(`Chrome cache folder does not exist: ${basePath}`);
-  }
-
-  const linuxFolders = fs.readdirSync(basePath).filter(folder => folder.startsWith('linux-'));
-  if (linuxFolders.length === 0) {
-    throw new Error('No linux- version folder found in Puppeteer chrome cache.');
-  }
-
-  // Pick the latest linux folder
-  const latestLinuxFolder = linuxFolders.sort().pop();
-
-  const chromePath = path.join(basePath, latestLinuxFolder, 'chrome-linux64', 'chrome');
-
-  if (!fs.existsSync(chromePath)) {
-    throw new Error(`Chrome executable not found at: ${chromePath}`);
-  }
-
-  return chromePath;
-}
+// Absolute path to Chrome installed during postinstall
+const CHROME_PATH = path.join(
+  process.cwd(),
+  '.cache',
+  'chrome',
+  'linux-127.0.6533.88',
+  'chrome-linux64',
+  'chrome'
+);
 
 app.use(express.static(path.join(__dirname, 'public')));
 app.use(express.urlencoded({ extended: true }));
@@ -45,11 +29,9 @@ app.post('/start', async (req, res) => {
 
   let browser;
   try {
-    const chromePath = getChromeExecutablePath();
-
     browser = await puppeteer.launch({
       headless: true,
-      executablePath: chromePath,
+      executablePath: CHROME_PATH,
       args: ['--no-sandbox', '--disable-setuid-sandbox'],
     });
 
