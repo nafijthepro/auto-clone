@@ -37,7 +37,6 @@ app.post('/start', async (req, res) => {
 
     const page = await browser.newPage();
 
-    // More flexible navigation wait strategy
     try {
       await page.goto('https://binge.buzz/login', {
         waitUntil: 'domcontentloaded',
@@ -48,18 +47,27 @@ app.post('/start', async (req, res) => {
       await page.goto('https://binge.buzz/login', { waitUntil: 'load', timeout: 60000 });
     }
 
-    await page.waitForSelector('.PhoneInputInput', { visible: true });
-    const input = await page.$('.PhoneInputInput');
+    // Wait for phone input by class, exactly as given
+    await page.waitForSelector('input.PhoneInputInput', { visible: true });
+    const input = await page.$('input.PhoneInputInput');
     await input.click({ clickCount: 3 });
     await page.keyboard.press('Backspace');
-    await page.type('.PhoneInputInput', phoneNumber);
+    await page.type('input.PhoneInputInput', phoneNumber);
 
-    const entered = await page.$eval('.PhoneInputInput', el => el.value);
+    const entered = await page.$eval('input.PhoneInputInput', el => el.value);
     console.log('✅ Entered phone number:', entered);
 
-    await page.waitForSelector('.BingeBtnBase-root', { visible: true });
-    await page.click('.BingeBtnBase-root');
+    // Wait and click the verify button by exact class (note it has two classes, so select the main one)
+    await page.waitForSelector('button.BingeBtnBase-root', { visible: true });
+    await page.click('button.BingeBtnBase-root');
+
+    // Wait for any potential result/loading
     await page.waitForTimeout(3000);
+
+    // Take screenshot after clicking Verify
+    const screenshotPath = path.join(__dirname, 'public', `otp_screenshot_${Date.now()}.png`);
+    await page.screenshot({ path: screenshotPath, fullPage: true });
+    console.log(`🖼️ Screenshot saved: http://localhost:${PORT}/${path.basename(screenshotPath)}`);
 
     res.send('✅ OTP generated successfully!');
   } catch (error) {
