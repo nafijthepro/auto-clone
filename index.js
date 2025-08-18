@@ -31,12 +31,17 @@ app.post('/start', async (req, res) => {
       return res.status(400).json({ error: 'Missing phone number' });
     }
 
-    phoneNumber = phoneNumber.replace(/\D/g, '');
-    if (!/^\d{10,16}$/.test(phoneNumber)) {
-      return res.status(400).json({ error: 'Invalid phone number format' });
+    phoneNumber = phoneNumber.toString().trim();
+    // accept 10–16 digits (strip non-digits), or allow emails as-is
+    const digitsOnly = phoneNumber.replace(/\D/g, '');
+    const isDigits = /^\d{10,16}$/.test(digitsOnly);
+    const isEmail = /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(phoneNumber);
+    if (!isDigits && !isEmail) {
+      return res.status(400).json({ error: 'Invalid phone or email format' });
     }
+    const valueToEnter = isDigits ? digitsOnly : phoneNumber;
 
-    console.log(`➡️ Starting OTP automation for: ${phoneNumber}`);
+    console.log(`➡️ Starting automation for: ${valueToEnter}`);
 
     browser = await puppeteer.launch({
       headless: 'new',
@@ -54,13 +59,13 @@ app.post('/start', async (req, res) => {
 
     page = await browser.newPage();
 
-    // Set user agent to look like a real browser
+    // Realistic UA
     await page.setUserAgent(
       'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 ' +
       '(KHTML, like Gecko) Chrome/119.0.0.0 Safari/537.36'
     );
 
-    // Prevent detection by tweaking navigator properties
+    // Anti-detection tweaks
     await page.evaluateOnNewDocument(() => {
       Object.defineProperty(navigator, 'webdriver', { get: () => false });
       window.navigator.chrome = { runtime: {} };
@@ -68,85 +73,88 @@ app.post('/start', async (req, res) => {
       Object.defineProperty(navigator, 'plugins', { get: () => [1, 2, 3] });
     });
 
-    // Go to login page - waiting for full load event, 90 sec timeout
-    await page.goto('https://binge.buzz/login', {
+    // Go to 10 Minute School login
+    await page.goto('https://10minuteschool.com/auth/login', {
       waitUntil: 'load',
       timeout: 90000
     });
 
     await delay(3000);
 
-    // Screenshot after page load
+    // Screenshot 1: page loaded
     const initialScreenshot = `page_loaded_${Date.now()}.png`;
     await page.screenshot({ path: path.join(__dirname, 'public', initialScreenshot), fullPage: true });
     console.log(`📸 Initial page screenshot saved: ${RENDER_URL}/${initialScreenshot}`);
 
-    // Try to set country if dropdown available
-    try {
-      await page.waitForSelector('select.PhoneInputCountrySelect', { visible: true, timeout: 7000 });
-      await page.select('select.PhoneInputCountrySelect', 'BD');
-      console.log('🌐 Country set to BD');
-    } catch {
-      console.warn('⚠️ Country selector not found or already selected');
-    }
+    // Find the username/phone input (robust selectors)
+    const inputSelectors = [
+      'input[name="userFullName"]',
+      'input[placeholder*="মোবাইল"]',
+      'input[placeholder*="ইমেইল"]',
+      'input[type="text"]',
+      'input'
+    ];
 
-    // Try multiple selectors for phone input for robustness
-    const phoneSelectors = ['input.PhoneInputInput', 'input[type=tel]', 'input[name=phone]', 'input'];
-
-    let phoneInputSelector = null;
-    for (const sel of phoneSelectors) {
+    let inputFound = null;
+    for (const sel of inputSelectors) {
       try {
-        await page.waitForSelector(sel, { visible: true, timeout: 7000 });
-        phoneInputSelector = sel;
+        await page.waitForSelector(sel, { visible: true, timeout: 6000 });
+        inputFound = sel;
         break;
-      } catch {
-        // ignore and try next
-      }
+      } catch (_) { /* try next */ }
     }
+    if (!inputFound) throw new Error('❌ Could not locate the login input field');
 
-    if (!phoneInputSelector) throw new Error('❌ Phone input field not found on the page');
-
-    await page.click(phoneInputSelector, { clickCount: 3 });
+    // Type the number/email
+    await page.click(inputFound, { clickCount: 3 });
     await page.keyboard.press('Backspace');
-    await page.type(phoneInputSelector, phoneNumber, { delay: 75 });
+    await page.type(inputFound, valueToEnter, { delay: 75 });
 
-    const entered = await page.$eval(phoneInputSelector, el => el.value);
-    console.log('📲 Phone entered:', entered);
-
-    // Screenshot before clicking OTP button
-    const beforeClickFile = `before_click_otp_${Date.now()}.png`;
+    // Screenshot 2: before submit
+    const beforeClickFile = `before_click_submit_${Date.now()}.png`;
     const beforeClickPath = path.join(__dirname, 'public', beforeClickFile);
     await page.screenshot({ path: beforeClickPath, fullPage: true });
-    console.log(`📸 Screenshot before OTP click saved: ${RENDER_URL}/${beforeClickFile}`);
+    console.log(`📸 Screenshot before submit saved: ${RENDER_URL}/${beforeClickFile}`);
 
-    // Find OTP or Verify button & click it
-    const buttons = await page.$$('button.BingeBtnBase-root');
+    // Click the submit button (robust selectors)
+    const buttonSelectors = [
+      'button[name="submitBtn"]',
+      'button.bg-green.h-12.w-full.rounded.font-medium.text-white',
+      'button[type="submit"]',
+      'button'
+    ];
+
     let clicked = false;
-    for (const btn of buttons) {
-      const text = (await page.evaluate(el => el.textContent, btn)) || '';
-      if (/otp|verify/i.test(text)) {
-        await btn.click();
-        clicked = true;
-        console.log(`✅ Clicked button: "${text.trim()}"`);
-        break;
+    for (const sel of buttonSelectors) {
+      const btn = await page.$(sel);
+      if (btn) {
+        // Optional: check visible/enabled
+        try {
+          await page.waitForSelector(sel, { visible: true, timeout: 3000 });
+          await btn.click();
+          clicked = true;
+          console.log(`✅ Clicked submit button via selector: ${sel}`);
+          break;
+        } catch (_) { /* try next button */ }
       }
     }
+    if (!clicked) throw new Error('❌ Submit button not found');
 
-    if (!clicked) throw new Error('❌ No OTP or Verify button found');
-
+    // Wait a bit for response/navigation/UI change
     await delay(6000);
 
-    // Screenshot after clicking OTP
-    const otpFile = `otp_screenshot_${Date.now()}.png`;
-    const otpPath = path.join(__dirname, 'public', otpFile);
-    await page.screenshot({ path: otpPath, fullPage: true });
-    console.log(`📸 OTP screenshot saved: ${RENDER_URL}/${otpFile}`);
+    // Screenshot 3: after submit
+    const afterSubmitFile = `after_submit_${Date.now()}.png`;
+    const afterSubmitPath = path.join(__dirname, 'public', afterSubmitFile);
+    await page.screenshot({ path: afterSubmitPath, fullPage: true });
+    console.log(`📸 After submit screenshot saved: ${RENDER_URL}/${afterSubmitFile}`);
 
+    // Return JSON like your original shape
     res.json({
-      message: '✅ OTP process completed',
+      message: '✅ Login submit attempted successfully',
       initialScreenshotUrl: `${RENDER_URL}/${initialScreenshot}`,
       beforeClickUrl: `${RENDER_URL}/${beforeClickFile}`,
-      otpScreenshotUrl: `${RENDER_URL}/${otpFile}`
+      otpScreenshotUrl: `${RENDER_URL}/${afterSubmitFile}`
     });
 
   } catch (error) {
