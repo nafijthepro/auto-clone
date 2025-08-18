@@ -26,8 +26,6 @@
         linear-gradient(135deg, var(--bg1), var(--bg2));
       overflow-x:hidden;
     }
-
-    /* Top Nav */
     .nav{
       position:fixed; inset:0 auto auto 0; width:100%; height:64px;
       display:flex; align-items:center; justify-content:center;
@@ -38,20 +36,10 @@
     .nav-inner{ width:min(1100px, 92%); display:flex; align-items:center; justify-content:space-between; }
     .brand{ font-weight:800; font-size: clamp(20px, 2.6vw, 28px); display:flex; align-items:center; gap:.5rem; }
     .brand .dot{ color:var(--acc); }
-
-    /* Hero */
     .hero{ padding-top:100px; text-align:center; animation: fadeInUp .8s ease both; }
     .headline{ font-size: clamp(28px, 4.4vw, 46px); font-weight:900; margin:12px 0 6px; }
     .sub{ color:var(--muted); max-width:680px; margin:auto; }
-
-    /* Spark Loader */
-    .spark-loader{
-      font-size:34px; color:var(--acc); font-weight:900;
-      animation: blink 1s infinite alternate;
-      display:inline-block; margin-left:8px;
-    }
-
-    /* Card */
+    .spark-loader{ font-size:34px; color:var(--acc); font-weight:900; animation: blink 1s infinite alternate; display:inline-block; margin-left:8px; }
     .wrap{ display:grid; place-items:center; padding: 12px 0 80px }
     .card{
       width:min(860px, 92%); margin-top:18px;
@@ -62,8 +50,6 @@
     }
     .card-head{ display:flex; align-items:center; justify-content:space-between; flex-wrap:wrap; margin-bottom:14px; }
     .badge{ padding:.35rem .6rem; border-radius:999px; font-size:12px; background:#16a34a22; color:#86efac; border:1px solid #16a34a55; }
-
-    /* Form */
     .form{ display:grid; grid-template-columns: 1fr auto; gap:12px; }
     textarea.input{
       width:100%; min-height:80px; resize:vertical;
@@ -73,15 +59,9 @@
     }
     .btn{ padding:14px 18px; font-weight:800; font-size:16px; border-radius:14px;
       background:linear-gradient(135deg, #22c55e, #84cc16); color:#052e16; border:none; cursor:pointer; }
-
-    /* Loader */
     .loader{ width:26px; height:26px; border-radius:50%; border: 3px solid #ffffff2e; border-top-color:#fff; animation: spin 1s linear infinite; display:inline-block; }
-
-    /* Footer Heartbeat */
     footer{ text-align:center; color:var(--muted); padding:26px 0 46px; font-size:13px; }
     .heart{ display:inline-block; color:var(--acc-2); animation: heartbeat 1.2s infinite; margin-left:4px; }
-
-    /* Animations */
     @keyframes fadeInUp{from{opacity:0; transform:translateY(10px)} to{opacity:1; transform:translateY(0)}}
     @keyframes blink{from{opacity:.4} to{opacity:1}}
     @keyframes spin{to{transform:rotate(360deg)}}
@@ -89,30 +69,28 @@
   </style>
 </head>
 <body>
-  <!-- Top Nav -->
   <div class="nav">
     <div class="nav-inner">
       <div class="brand">NAFIJ<span class="dot">.</span></div>
     </div>
   </div>
 
-  <!-- Hero -->
   <section class="hero">
     <p class="badge">OTP Automation • Multi Session</p>
     <h1 class="headline">Automate OTP flows <span class="spark-loader">✦</span></h1>
-    <p class="sub">Enter up to <strong>3 numbers</strong> (separate with commas or new lines). Screenshots will appear below after automation.</p>
+    <p class="sub">Enter up to <strong>3 numbers/emails</strong> (comma or new line). Each can run multiple sessions.</p>
   </section>
 
-  <!-- Card -->
   <main class="wrap">
     <div class="card">
       <div class="card-head">
-        <div class="card-title">Run a Session</div>
+        <div class="card-title">Run Sessions</div>
         <div class="badge" id="statusBadge">Idle</div>
       </div>
 
       <form id="otpForm" class="form" autocomplete="off">
         <textarea class="input" id="phones" placeholder="019XXXXXXX, 017XXXXXXX, email@example.com" required></textarea>
+        <input type="number" id="count" min="1" max="5" value="1" style="width:80px; border-radius:14px; padding:10px;" title="Number of sessions">
         <button class="btn" id="startBtn" type="submit">Start</button>
       </form>
 
@@ -133,6 +111,7 @@
     const shots = document.getElementById('shots');
     const badge = document.getElementById('statusBadge');
     const startBtn = document.getElementById('startBtn');
+    const countInput = document.getElementById('count');
 
     function setBusy(b){
       if(b){
@@ -146,10 +125,10 @@
       }
     }
 
-    function renderImages(phone, urls){
+    function renderImages(phone, sessionIndex, urls){
       const container = document.createElement('div');
       container.style.marginTop = "20px";
-      container.innerHTML = `<h3>${phone}</h3>`;
+      container.innerHTML = `<h3>${phone} • Session ${sessionIndex}</h3>`;
       urls.forEach((u,i)=>{
         const img = document.createElement('img');
         img.src = u;
@@ -167,6 +146,7 @@
       if (!inputVal) return;
 
       const numbers = inputVal.split(/[\n,]+/).map(s=>s.trim()).filter(Boolean).slice(0,3);
+      const count = parseInt(countInput.value) || 1;
       shots.innerHTML = '';
       setBusy(true);
       result.textContent = 'Launching automation...';
@@ -176,17 +156,19 @@
           const res = await fetch('/start', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ phoneNumber: phone })
+            body: JSON.stringify({ value: phone, count })
           });
           const data = await res.json();
-          if(res.ok){
-            const urls = data.screenshots || [data.initialScreenshotUrl, data.beforeClickUrl, data.otpScreenshotUrl].filter(Boolean);
-            renderImages(phone, urls);
+          if(res.ok && data.results){
+            data.results.forEach((r,i)=>{
+              const urls = r.screenshot ? [r.screenshot] : [];
+              renderImages(phone, i+1, urls);
+            });
           } else {
-            renderImages(phone, [data.errorScreenshot || '']);
+            renderImages(phone, 1, [data.errorScreenshot || '']);
           }
         } catch(err){
-          renderImages(phone, []);
+          renderImages(phone, 1, []);
         }
       }
 
@@ -196,3 +178,4 @@
   </script>
 </body>
 </html>
+
