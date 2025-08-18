@@ -6,11 +6,11 @@
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <style>
     :root{
-      --bg1:#0f172a;         /* slate-900 */
-      --bg2:#1e293b;         /* slate-800 */
-      --acc:#22c55e;         /* green-500 */
-      --acc-2:#84cc16;       /* lime-500 */
-      --card:#111827aa;      /* semi glass */
+      --bg1:#0f172a;
+      --bg2:#1e293b;
+      --acc:#22c55e;
+      --acc-2:#84cc16;
+      --card:#111827aa;
       --text:#e5e7eb;
       --muted:#94a3b8;
       --ring:#ffffff33;
@@ -27,7 +27,7 @@
       overflow-x:hidden;
     }
 
-    /* Top Bar */
+    /* Top Nav */
     .nav{
       position:fixed; inset:0 auto auto 0; width:100%; height:64px;
       display:flex; align-items:center; justify-content:center;
@@ -35,158 +35,72 @@
       background: linear-gradient(to bottom, #0b1222aa, #0b122200);
       z-index:50; border-bottom:1px solid #ffffff10;
     }
-    .nav-inner{
-      width:min(1100px, 92%);
-      display:flex; align-items:center; justify-content:space-between;
-    }
-    .brand{
-      font-weight:800; letter-spacing:0.5px; font-size: clamp(20px, 2.6vw, 28px);
-      display:flex; align-items:center; gap:.5rem;
-    }
-    .brand .dot{ color:var(--acc); transform: translateY(-1px); }
-    .nav-links{ display:flex; gap:1rem; opacity:.85; font-weight:600; }
-    .nav-links a{ color:var(--muted); text-decoration:none; padding:.35rem .6rem; border-radius:10px; transition:all .25s ease }
-    .nav-links a:hover{ color:var(--text); background:#ffffff10 }
+    .nav-inner{ width:min(1100px, 92%); display:flex; align-items:center; justify-content:space-between; }
+    .brand{ font-weight:800; font-size: clamp(20px, 2.6vw, 28px); display:flex; align-items:center; gap:.5rem; }
+    .brand .dot{ color:var(--acc); }
 
     /* Hero */
-    .hero{
-      padding-top:100px; padding-bottom:28px;
-      display:grid; place-items:center; text-align:center;
-      animation: fadeInUp .8s ease both;
-    }
-    .headline{
-      font-size: clamp(28px, 4.4vw, 46px);
-      font-weight:900; line-height:1.1; letter-spacing:.2px;
-      margin: 12px 0 6px;
-    }
-    .sub{ color:var(--muted); max-width:680px }
-    .glow{
-      position:absolute; inset:auto; width:420px; height:420px; border-radius:50%;
-      background: radial-gradient(circle at 50% 50%, #22c55e33, transparent 60%);
-      filter: blur(40px); z-index:-1; transform: translateY(-40px);
+    .hero{ padding-top:100px; text-align:center; animation: fadeInUp .8s ease both; }
+    .headline{ font-size: clamp(28px, 4.4vw, 46px); font-weight:900; margin:12px 0 6px; }
+    .sub{ color:var(--muted); max-width:680px; margin:auto; }
+
+    /* Spark Loader */
+    .spark-loader{
+      font-size:34px; color:var(--acc); font-weight:900;
+      animation: blink 1s infinite alternate;
+      display:inline-block; margin-left:8px;
     }
 
     /* Card */
-    .wrap{ display:grid; place-items:start; justify-content:center; padding: 12px 0 80px }
+    .wrap{ display:grid; place-items:center; padding: 12px 0 80px }
     .card{
       width:min(860px, 92%); margin-top:18px;
       background: linear-gradient(180deg, #0b1222cc, #0b122280);
       border:1px solid #ffffff1a;
       border-radius:24px; padding: clamp(18px, 3vw, 26px);
       box-shadow: 0 10px 40px #00000066, inset 0 1px 0 #ffffff14;
-      animation: popIn .5s ease both .15s;
     }
-    .card-head{
-      display:flex; align-items:center; justify-content:space-between; gap:1rem; flex-wrap:wrap;
-      margin-bottom:14px;
-    }
-    .card-title{ font-weight:800; letter-spacing:.2px }
-    .badge{
-      padding:.35rem .6rem; border-radius:999px; font-weight:700; font-size:12px;
-      background:#16a34a22; color:#86efac; border:1px solid #16a34a55;
-      box-shadow: inset 0 0 12px #22c55e22;
-    }
+    .card-head{ display:flex; align-items:center; justify-content:space-between; flex-wrap:wrap; margin-bottom:14px; }
+    .badge{ padding:.35rem .6rem; border-radius:999px; font-size:12px; background:#16a34a22; color:#86efac; border:1px solid #16a34a55; }
 
     /* Form */
-    .form{
-      display:grid; grid-template-columns: 1fr auto; gap:12px; align-items:center;
-      margin-top:6px;
-    }
-    .input{
-      width:100%; padding:14px 14px; font-size:16px; color:var(--text);
+    .form{ display:grid; grid-template-columns: 1fr auto; gap:12px; }
+    textarea.input{
+      width:100%; min-height:80px; resize:vertical;
+      padding:14px; font-size:16px; color:var(--text);
       background:#0b1222; border:1px solid var(--ring);
-      outline:none; border-radius:14px;
-      transition: box-shadow .2s ease, border-color .2s ease, transform .1s ease;
-      box-shadow: 0 0 0 0px #22c55e00;
+      border-radius:14px;
     }
-    .input:focus{
-      border-color:#22c55e99; box-shadow: 0 0 0 4px #22c55e22; transform: translateY(-1px);
-    }
-    .btn{
-      padding:14px 18px; font-weight:800; font-size:16px; border-radius:14px;
-      background:linear-gradient(135deg, #22c55e, #84cc16);
-      color:#052e16; border:none; cursor:pointer; min-width:130px;
-      box-shadow: 0 8px 30px #22c55e44; transition: transform .14s ease, box-shadow .14s ease, filter .2s ease;
-    }
-    .btn:hover{ transform: translateY(-2px); box-shadow: 0 12px 36px #22c55e55; filter:saturate(1.05) }
-    .btn:active{ transform: translateY(0px); box-shadow: 0 8px 22px #22c55e40 }
-
-    /* Output */
-    .status{ margin-top:16px; color:var(--muted); font-weight:600; min-height:22px }
-    .grid{
-      margin-top:18px;
-      display:grid; gap:12px;
-      grid-template-columns: repeat(3, 1fr);
-    }
-    @media (max-width:900px){ .grid{ grid-template-columns: repeat(2, 1fr);} }
-    @media (max-width:560px){ .grid{ grid-template-columns: 1fr; } }
-
-    .shot{
-      position:relative; border-radius:16px; overflow:hidden; border:1px solid #ffffff1a;
-      background:#0b1222; transform: translateY(6px); opacity:0; animation: rise .6s ease forwards;
-    }
-    .shot:nth-child(2){ animation-delay:.08s }
-    .shot:nth-child(3){ animation-delay:.16s }
-    .shot img{ width:100%; display:block; }
-    .shot .cap{
-      position:absolute; inset:auto 0 0 0; padding:8px 10px; font-size:12px;
-      background: linear-gradient(180deg, #00000000, #00000066);
-      color:#e5e7eb; text-shadow: 0 1px 2px #000;
-    }
+    .btn{ padding:14px 18px; font-weight:800; font-size:16px; border-radius:14px;
+      background:linear-gradient(135deg, #22c55e, #84cc16); color:#052e16; border:none; cursor:pointer; }
 
     /* Loader */
-    .loader{
-      width:26px; height:26px; border-radius:50%;
-      border: 3px solid #ffffff2e; border-top-color:#fff; animation: spin 1s linear infinite;
-      margin-inline:8px; display:inline-block; vertical-align:middle;
-    }
+    .loader{ width:26px; height:26px; border-radius:50%; border: 3px solid #ffffff2e; border-top-color:#fff; animation: spin 1s linear infinite; display:inline-block; }
 
-    /* Toast */
-    .toast{
-      position:fixed; right:16px; bottom:16px; background:#0b1222; border:1px solid #22c55e55;
-      color:#d1fae5; padding:10px 14px; border-radius:12px; font-weight:700;
-      box-shadow: 0 12px 30px #0008; display:none;
-    }
-
-    /* Footer */
-    footer{
-      text-align:center; color:var(--muted); padding:26px 0 46px; font-size:13px;
-    }
+    /* Footer Heartbeat */
+    footer{ text-align:center; color:var(--muted); padding:26px 0 46px; font-size:13px; }
+    .heart{ display:inline-block; color:var(--acc-2); animation: heartbeat 1.2s infinite; margin-left:4px; }
 
     /* Animations */
     @keyframes fadeInUp{from{opacity:0; transform:translateY(10px)} to{opacity:1; transform:translateY(0)}}
-    @keyframes popIn{from{opacity:0; transform:scale(.98)} to{opacity:1; transform:scale(1)}}
-    @keyframes rise{from{opacity:0; transform: translateY(12px)} to{opacity:1; transform: translateY(0)}}
+    @keyframes blink{from{opacity:.4} to{opacity:1}}
     @keyframes spin{to{transform:rotate(360deg)}}
-
-    /* Tiny accents */
-    .accent-underline{
-      background: linear-gradient(90deg, transparent, #22c55e66, transparent);
-      height:2px; border-radius:99px; width:100%; margin: 12px 0 0;
-    }
+    @keyframes heartbeat{ 0%,100%{transform:scale(1)} 50%{transform:scale(1.3)} }
   </style>
 </head>
 <body>
   <!-- Top Nav -->
   <div class="nav">
     <div class="nav-inner">
-      <div class="brand">
-        <span>NAFIJ</span><span class="dot">.</span>
-      </div>
-      <div class="nav-links">
-        <a href="#">Home</a>
-        <a href="#">Work</a>
-        <a href="#">About</a>
-      </div>
+      <div class="brand">NAFIJ<span class="dot">.</span></div>
     </div>
   </div>
 
   <!-- Hero -->
   <section class="hero">
-    <div class="glow" aria-hidden="true"></div>
-    <p class="badge">OTP Automation • Portfolio Tool</p>
-    <h1 class="headline">Automate, Capture, and Preview<br/> your OTP flows — beautifully.</h1>
-    <p class="sub">Enter a phone number or email, and we’ll launch the headless flow, click through, and show you three fresh screenshots. Designed by <strong>NAFIJ<span style="color:#22c55e">.</span></strong></p>
+    <p class="badge">OTP Automation • Multi Session</p>
+    <h1 class="headline">Automate OTP flows <span class="spark-loader">✦</span></h1>
+    <p class="sub">Enter up to <strong>3 numbers</strong> (separate with commas or new lines). Screenshots will appear below after automation.</p>
   </section>
 
   <!-- Card -->
@@ -196,24 +110,20 @@
         <div class="card-title">Run a Session</div>
         <div class="badge" id="statusBadge">Idle</div>
       </div>
-      <div class="accent-underline"></div>
 
       <form id="otpForm" class="form" autocomplete="off">
-        <input class="input" id="phone" type="text" placeholder="019XXXXXXXX  •  or  email@example.com" required />
+        <textarea class="input" id="phones" placeholder="019XXXXXXX, 017XXXXXXX, email@example.com" required></textarea>
         <button class="btn" id="startBtn" type="submit">Start</button>
       </form>
 
       <div class="status" id="result">Ready.</div>
-
-      <div id="shots" class="grid" aria-live="polite"></div>
+      <div id="shots"></div>
     </div>
   </main>
 
   <footer>
-    © <span id="yy"></span> NAFIJ<span style="color:#22c55e">.</span> Crafted with care.
+    © <span id="yy"></span> NAFIJ<span style="color:#22c55e">.</span> Created for Future<span class="heart">❤</span>
   </footer>
-
-  <div class="toast" id="toast">Done!</div>
 
   <script>
     document.getElementById('yy').textContent = new Date().getFullYear();
@@ -223,17 +133,6 @@
     const shots = document.getElementById('shots');
     const badge = document.getElementById('statusBadge');
     const startBtn = document.getElementById('startBtn');
-    const toast = document.getElementById('toast');
-
-    function showToast(msg){
-      toast.textContent = msg;
-      toast.style.display = 'block';
-      toast.style.opacity = 0;
-      toast.animate([{opacity:0, transform:'translateY(8px)'},{opacity:1, transform:'translateY(0)'}], {duration:200, fill:'forwards'});
-      setTimeout(()=>{
-        toast.animate([{opacity:1},{opacity:0}], {duration:250, fill:'forwards'}).onfinish = ()=> toast.style.display='none';
-      }, 2200);
-    }
 
     function setBusy(b){
       if(b){
@@ -247,66 +146,52 @@
       }
     }
 
-    function renderImages(urls){
-      shots.innerHTML = '';
-      urls.slice(0,3).forEach((u, i)=>{
-        const div = document.createElement('div');
-        div.className = 'shot';
-        div.innerHTML = '<img src="'+u+'" alt="Screenshot '+(i+1)+'" loading="lazy"/>' +
-                        '<div class="cap">Screenshot '+(i+1)+'</div>';
-        shots.appendChild(div);
+    function renderImages(phone, urls){
+      const container = document.createElement('div');
+      container.style.marginTop = "20px";
+      container.innerHTML = `<h3>${phone}</h3>`;
+      urls.forEach((u,i)=>{
+        const img = document.createElement('img');
+        img.src = u;
+        img.alt = "Screenshot "+(i+1);
+        img.style.width = "30%";
+        img.style.margin="6px";
+        container.appendChild(img);
       });
+      shots.appendChild(container);
     }
 
     form.addEventListener('submit', async (e) => {
       e.preventDefault();
-      const phone = document.getElementById('phone').value.trim();
-      if (!phone) {
-        result.textContent = 'Please enter a valid phone number or email.';
-        return;
-      }
+      const inputVal = document.getElementById('phones').value.trim();
+      if (!inputVal) return;
 
+      const numbers = inputVal.split(/[\n,]+/).map(s=>s.trim()).filter(Boolean).slice(0,3);
+      shots.innerHTML = '';
       setBusy(true);
-      result.innerHTML = 'Launching flow <span class="loader"></span>';
+      result.textContent = 'Launching automation...';
 
-      try {
-        const res = await fetch('/start', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ phoneNumber: phone })
-        });
-
-        const data = await res.json();
-
-        if (res.ok) {
-          // Accept either {initialScreenshotUrl, beforeClickUrl, otpScreenshotUrl} OR {screenshots:[...]}
-          const urls = [];
-          if (Array.isArray(data.screenshots)) {
-            urls.push(...data.screenshots);
+      for(const phone of numbers){
+        try {
+          const res = await fetch('/start', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ phoneNumber: phone })
+          });
+          const data = await res.json();
+          if(res.ok){
+            const urls = data.screenshots || [data.initialScreenshotUrl, data.beforeClickUrl, data.otpScreenshotUrl].filter(Boolean);
+            renderImages(phone, urls);
+          } else {
+            renderImages(phone, [data.errorScreenshot || '']);
           }
-          if (data.initialScreenshotUrl) urls.push(data.initialScreenshotUrl);
-          if (data.beforeClickUrl) urls.push(data.beforeClickUrl);
-          if (data.otpScreenshotUrl) urls.push(data.otpScreenshotUrl);
-
-          // Deduplicate, then take first 3
-          const unique = [...new Set(urls)].slice(0,3);
-
-          result.textContent = (data.message || 'Success!') + ' Showing screenshots below.';
-          renderImages(unique);
-          showToast('Success ✔');
-        } else {
-          result.textContent = 'Error: ' + (data.error || 'Request failed.');
-          if (data.errorScreenshot) {
-            renderImages([data.errorScreenshot]);
-          }
-          showToast('Something went wrong');
+        } catch(err){
+          renderImages(phone, []);
         }
-      } catch (err) {
-        result.textContent = 'Error: ' + err.message;
-        showToast('Network error');
-      } finally {
-        setBusy(false);
       }
+
+      result.textContent = 'Done.';
+      setBusy(false);
     });
   </script>
 </body>
