@@ -1,136 +1,313 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <meta charset="UTF-8">
-    <title>OTP Automation</title>
-    <style>
-        body {
-            margin: 0;
-            padding: 0;
-            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            height: 100vh;
-            background: linear-gradient(135deg, #667eea, #764ba2);
-            color: #fff;
-            text-align: center;
-            overflow: hidden;
-        }
+  <meta charset="UTF-8" />
+  <title>NAFIJ. — OTP Automation</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <style>
+    :root{
+      --bg1:#0f172a;         /* slate-900 */
+      --bg2:#1e293b;         /* slate-800 */
+      --acc:#22c55e;         /* green-500 */
+      --acc-2:#84cc16;       /* lime-500 */
+      --card:#111827aa;      /* semi glass */
+      --text:#e5e7eb;
+      --muted:#94a3b8;
+      --ring:#ffffff33;
+    }
+    *{box-sizing:border-box}
+    html,body{height:100%}
+    body{
+      margin:0; color:var(--text); font-family: ui-sans-serif, system-ui, -apple-system,
+      Segoe UI, Roboto, Helvetica, Arial, "Apple Color Emoji","Segoe UI Emoji";
+      background:
+        radial-gradient(1200px 600px at 20% -10%, #334155 0%, transparent 60%),
+        radial-gradient(900px 500px at 120% 10%, #14532d 0%, transparent 55%),
+        linear-gradient(135deg, var(--bg1), var(--bg2));
+      overflow-x:hidden;
+    }
 
-        .container {
-            background: rgba(255, 255, 255, 0.1);
-            padding: 40px;
-            border-radius: 16px;
-            box-shadow: 0 8px 30px rgba(0, 0, 0, 0.2);
-            backdrop-filter: blur(8px);
-            width: 90%;
-            max-width: 400px;
-        }
+    /* Top Bar */
+    .nav{
+      position:fixed; inset:0 auto auto 0; width:100%; height:64px;
+      display:flex; align-items:center; justify-content:center;
+      backdrop-filter: blur(10px);
+      background: linear-gradient(to bottom, #0b1222aa, #0b122200);
+      z-index:50; border-bottom:1px solid #ffffff10;
+    }
+    .nav-inner{
+      width:min(1100px, 92%);
+      display:flex; align-items:center; justify-content:space-between;
+    }
+    .brand{
+      font-weight:800; letter-spacing:0.5px; font-size: clamp(20px, 2.6vw, 28px);
+      display:flex; align-items:center; gap:.5rem;
+    }
+    .brand .dot{ color:var(--acc); transform: translateY(-1px); }
+    .nav-links{ display:flex; gap:1rem; opacity:.85; font-weight:600; }
+    .nav-links a{ color:var(--muted); text-decoration:none; padding:.35rem .6rem; border-radius:10px; transition:all .25s ease }
+    .nav-links a:hover{ color:var(--text); background:#ffffff10 }
 
-        h1 {
-            margin-bottom: 20px;
-            font-size: 2em;
-            animation: fadeInDown 1s ease-in-out;
-        }
+    /* Hero */
+    .hero{
+      padding-top:100px; padding-bottom:28px;
+      display:grid; place-items:center; text-align:center;
+      animation: fadeInUp .8s ease both;
+    }
+    .headline{
+      font-size: clamp(28px, 4.4vw, 46px);
+      font-weight:900; line-height:1.1; letter-spacing:.2px;
+      margin: 12px 0 6px;
+    }
+    .sub{ color:var(--muted); max-width:680px }
+    .glow{
+      position:absolute; inset:auto; width:420px; height:420px; border-radius:50%;
+      background: radial-gradient(circle at 50% 50%, #22c55e33, transparent 60%);
+      filter: blur(40px); z-index:-1; transform: translateY(-40px);
+    }
 
-        @keyframes fadeInDown {
-            from { opacity: 0; transform: translateY(-30px); }
-            to { opacity: 1; transform: translateY(0); }
-        }
+    /* Card */
+    .wrap{ display:grid; place-items:start; justify-content:center; padding: 12px 0 80px }
+    .card{
+      width:min(860px, 92%); margin-top:18px;
+      background: linear-gradient(180deg, #0b1222cc, #0b122280);
+      border:1px solid #ffffff1a;
+      border-radius:24px; padding: clamp(18px, 3vw, 26px);
+      box-shadow: 0 10px 40px #00000066, inset 0 1px 0 #ffffff14;
+      animation: popIn .5s ease both .15s;
+    }
+    .card-head{
+      display:flex; align-items:center; justify-content:space-between; gap:1rem; flex-wrap:wrap;
+      margin-bottom:14px;
+    }
+    .card-title{ font-weight:800; letter-spacing:.2px }
+    .badge{
+      padding:.35rem .6rem; border-radius:999px; font-weight:700; font-size:12px;
+      background:#16a34a22; color:#86efac; border:1px solid #16a34a55;
+      box-shadow: inset 0 0 12px #22c55e22;
+    }
 
-        input {
-            width: 100%;
-            padding: 12px;
-            font-size: 16px;
-            margin-bottom: 20px;
-            border: none;
-            border-radius: 8px;
-            outline: none;
-            box-shadow: 0 0 0 2px rgba(255, 255, 255, 0.2);
-            transition: box-shadow 0.3s ease;
-        }
+    /* Form */
+    .form{
+      display:grid; grid-template-columns: 1fr auto; gap:12px; align-items:center;
+      margin-top:6px;
+    }
+    .input{
+      width:100%; padding:14px 14px; font-size:16px; color:var(--text);
+      background:#0b1222; border:1px solid var(--ring);
+      outline:none; border-radius:14px;
+      transition: box-shadow .2s ease, border-color .2s ease, transform .1s ease;
+      box-shadow: 0 0 0 0px #22c55e00;
+    }
+    .input:focus{
+      border-color:#22c55e99; box-shadow: 0 0 0 4px #22c55e22; transform: translateY(-1px);
+    }
+    .btn{
+      padding:14px 18px; font-weight:800; font-size:16px; border-radius:14px;
+      background:linear-gradient(135deg, #22c55e, #84cc16);
+      color:#052e16; border:none; cursor:pointer; min-width:130px;
+      box-shadow: 0 8px 30px #22c55e44; transition: transform .14s ease, box-shadow .14s ease, filter .2s ease;
+    }
+    .btn:hover{ transform: translateY(-2px); box-shadow: 0 12px 36px #22c55e55; filter:saturate(1.05) }
+    .btn:active{ transform: translateY(0px); box-shadow: 0 8px 22px #22c55e40 }
 
-        input:focus {
-            box-shadow: 0 0 0 2px #fff;
-        }
+    /* Output */
+    .status{ margin-top:16px; color:var(--muted); font-weight:600; min-height:22px }
+    .grid{
+      margin-top:18px;
+      display:grid; gap:12px;
+      grid-template-columns: repeat(3, 1fr);
+    }
+    @media (max-width:900px){ .grid{ grid-template-columns: repeat(2, 1fr);} }
+    @media (max-width:560px){ .grid{ grid-template-columns: 1fr; } }
 
-        button {
-            padding: 12px 24px;
-            font-size: 16px;
-            border: none;
-            border-radius: 8px;
-            background: linear-gradient(to right, #ff758c, #ff7eb3);
-            color: white;
-            cursor: pointer;
-            transition: transform 0.2s, box-shadow 0.2s;
-        }
+    .shot{
+      position:relative; border-radius:16px; overflow:hidden; border:1px solid #ffffff1a;
+      background:#0b1222; transform: translateY(6px); opacity:0; animation: rise .6s ease forwards;
+    }
+    .shot:nth-child(2){ animation-delay:.08s }
+    .shot:nth-child(3){ animation-delay:.16s }
+    .shot img{ width:100%; display:block; }
+    .shot .cap{
+      position:absolute; inset:auto 0 0 0; padding:8px 10px; font-size:12px;
+      background: linear-gradient(180deg, #00000000, #00000066);
+      color:#e5e7eb; text-shadow: 0 1px 2px #000;
+    }
 
-        button:hover {
-            transform: scale(1.05);
-            box-shadow: 0 4px 12px rgba(0,0,0,0.2);
-        }
+    /* Loader */
+    .loader{
+      width:26px; height:26px; border-radius:50%;
+      border: 3px solid #ffffff2e; border-top-color:#fff; animation: spin 1s linear infinite;
+      margin-inline:8px; display:inline-block; vertical-align:middle;
+    }
 
-        #result {
-            margin-top: 20px;
-            font-size: 16px;
-            min-height: 24px;
-        }
+    /* Toast */
+    .toast{
+      position:fixed; right:16px; bottom:16px; background:#0b1222; border:1px solid #22c55e55;
+      color:#d1fae5; padding:10px 14px; border-radius:12px; font-weight:700;
+      box-shadow: 0 12px 30px #0008; display:none;
+    }
 
-        .loader {
-            border: 4px solid rgba(255, 255, 255, 0.2);
-            border-top: 4px solid #fff;
-            border-radius: 50%;
-            width: 24px;
-            height: 24px;
-            animation: spin 1s linear infinite;
-            margin: 0 auto;
-        }
+    /* Footer */
+    footer{
+      text-align:center; color:var(--muted); padding:26px 0 46px; font-size:13px;
+    }
 
-        @keyframes spin {
-            0% { transform: rotate(0deg); }
-            100% { transform: rotate(360deg); }
-        }
-    </style>
+    /* Animations */
+    @keyframes fadeInUp{from{opacity:0; transform:translateY(10px)} to{opacity:1; transform:translateY(0)}}
+    @keyframes popIn{from{opacity:0; transform:scale(.98)} to{opacity:1; transform:scale(1)}}
+    @keyframes rise{from{opacity:0; transform: translateY(12px)} to{opacity:1; transform: translateY(0)}}
+    @keyframes spin{to{transform:rotate(360deg)}}
+
+    /* Tiny accents */
+    .accent-underline{
+      background: linear-gradient(90deg, transparent, #22c55e66, transparent);
+      height:2px; border-radius:99px; width:100%; margin: 12px 0 0;
+    }
+  </style>
 </head>
 <body>
-    <div class="container">
-        <h1>OTP Automation</h1>
-        <form id="otpForm">
-            <input type="text" id="phone" placeholder="019XXXXXXXX" required />
-            <button type="submit">Start</button>
-        </form>
-        <div id="result"></div>
+  <!-- Top Nav -->
+  <div class="nav">
+    <div class="nav-inner">
+      <div class="brand">
+        <span>NAFIJ</span><span class="dot">.</span>
+      </div>
+      <div class="nav-links">
+        <a href="#">Home</a>
+        <a href="#">Work</a>
+        <a href="#">About</a>
+      </div>
     </div>
+  </div>
 
-    <script>
-        const form = document.getElementById('otpForm');
-        const result = document.getElementById('result');
+  <!-- Hero -->
+  <section class="hero">
+    <div class="glow" aria-hidden="true"></div>
+    <p class="badge">OTP Automation • Portfolio Tool</p>
+    <h1 class="headline">Automate, Capture, and Preview<br/> your OTP flows — beautifully.</h1>
+    <p class="sub">Enter a phone number or email, and we’ll launch the headless flow, click through, and show you three fresh screenshots. Designed by <strong>NAFIJ<span style="color:#22c55e">.</span></strong></p>
+  </section>
 
-        form.addEventListener('submit', async (e) => {
-            e.preventDefault();
-            const phone = document.getElementById('phone').value.trim();
+  <!-- Card -->
+  <main class="wrap">
+    <div class="card">
+      <div class="card-head">
+        <div class="card-title">Run a Session</div>
+        <div class="badge" id="statusBadge">Idle</div>
+      </div>
+      <div class="accent-underline"></div>
 
-            if (!phone) {
-                result.textContent = 'Please enter a valid phone number.';
-                return;
-            }
+      <form id="otpForm" class="form" autocomplete="off">
+        <input class="input" id="phone" type="text" placeholder="019XXXXXXXX  •  or  email@example.com" required />
+        <button class="btn" id="startBtn" type="submit">Start</button>
+      </form>
 
-            result.innerHTML = '<div class="loader"></div>';
+      <div class="status" id="result">Ready.</div>
 
-            try {
-                const res = await fetch('/start', {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ phoneNumber: phone })
-                });
+      <div id="shots" class="grid" aria-live="polite"></div>
+    </div>
+  </main>
 
-                const text = await res.text();
-                result.innerHTML = text;
-            } catch (err) {
-                result.textContent = 'Error: ' + err.message;
-            }
+  <footer>
+    © <span id="yy"></span> NAFIJ<span style="color:#22c55e">.</span> Crafted with care.
+  </footer>
+
+  <div class="toast" id="toast">Done!</div>
+
+  <script>
+    document.getElementById('yy').textContent = new Date().getFullYear();
+
+    const form = document.getElementById('otpForm');
+    const result = document.getElementById('result');
+    const shots = document.getElementById('shots');
+    const badge = document.getElementById('statusBadge');
+    const startBtn = document.getElementById('startBtn');
+    const toast = document.getElementById('toast');
+
+    function showToast(msg){
+      toast.textContent = msg;
+      toast.style.display = 'block';
+      toast.style.opacity = 0;
+      toast.animate([{opacity:0, transform:'translateY(8px)'},{opacity:1, transform:'translateY(0)'}], {duration:200, fill:'forwards'});
+      setTimeout(()=>{
+        toast.animate([{opacity:1},{opacity:0}], {duration:250, fill:'forwards'}).onfinish = ()=> toast.style.display='none';
+      }, 2200);
+    }
+
+    function setBusy(b){
+      if(b){
+        startBtn.disabled = true;
+        startBtn.innerHTML = '<span class="loader"></span> Running';
+        badge.textContent = 'Working…';
+      }else{
+        startBtn.disabled = false;
+        startBtn.textContent = 'Start';
+        badge.textContent = 'Idle';
+      }
+    }
+
+    function renderImages(urls){
+      shots.innerHTML = '';
+      urls.slice(0,3).forEach((u, i)=>{
+        const div = document.createElement('div');
+        div.className = 'shot';
+        div.innerHTML = '<img src="'+u+'" alt="Screenshot '+(i+1)+'" loading="lazy"/>' +
+                        '<div class="cap">Screenshot '+(i+1)+'</div>';
+        shots.appendChild(div);
+      });
+    }
+
+    form.addEventListener('submit', async (e) => {
+      e.preventDefault();
+      const phone = document.getElementById('phone').value.trim();
+      if (!phone) {
+        result.textContent = 'Please enter a valid phone number or email.';
+        return;
+      }
+
+      setBusy(true);
+      result.innerHTML = 'Launching flow <span class="loader"></span>';
+
+      try {
+        const res = await fetch('/start', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ phoneNumber: phone })
         });
-    </script>
+
+        const data = await res.json();
+
+        if (res.ok) {
+          // Accept either {initialScreenshotUrl, beforeClickUrl, otpScreenshotUrl} OR {screenshots:[...]}
+          const urls = [];
+          if (Array.isArray(data.screenshots)) {
+            urls.push(...data.screenshots);
+          }
+          if (data.initialScreenshotUrl) urls.push(data.initialScreenshotUrl);
+          if (data.beforeClickUrl) urls.push(data.beforeClickUrl);
+          if (data.otpScreenshotUrl) urls.push(data.otpScreenshotUrl);
+
+          // Deduplicate, then take first 3
+          const unique = [...new Set(urls)].slice(0,3);
+
+          result.textContent = (data.message || 'Success!') + ' Showing screenshots below.';
+          renderImages(unique);
+          showToast('Success ✔');
+        } else {
+          result.textContent = 'Error: ' + (data.error || 'Request failed.');
+          if (data.errorScreenshot) {
+            renderImages([data.errorScreenshot]);
+          }
+          showToast('Something went wrong');
+        }
+      } catch (err) {
+        result.textContent = 'Error: ' + err.message;
+        showToast('Network error');
+      } finally {
+        setBusy(false);
+      }
+    });
+  </script>
 </body>
 </html>
