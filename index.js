@@ -4,7 +4,7 @@ const puppeteer = require('puppeteer');
 const app = express();
 
 const PORT = process.env.PORT || 3000;
-const RENDER_URL = 'https://auto-clone.onrender.com';
+const RENDER_URL = 'https://autoclone2.onrender.com';
 
 const CHROME_PATH = path.join(
   process.cwd(),
